@@ -1,0 +1,114 @@
+<% content_for :title, @board.name %>
+<% content_for :body_class, "h-screen overflow-hidden bg-board text-ink-50 antialiased" %>
+
+<div
+  class="relative flex h-screen w-screen flex-col"
+  data-controller="board"
+  data-board-id-value="<%= @board.slug %>"
+  data-board-nickname-value="<%= current_nickname %>"
+  data-board-strokes-value="<%= h @strokes.to_json %>"
+  data-board-create-url-value="<%= board_strokes_path(@board) %>"
+>
+  <%# Top bar %>
+  <header class="relative z-30 flex shrink-0 items-center justify-between gap-3 border-b border-white/5 bg-ink-950/85 px-3 py-2.5 backdrop-blur-xl sm:px-4">
+    <div class="flex min-w-0 items-center gap-3">
+      <%= link_to boards_path, class: "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-ink-300 transition hover:bg-white/10 hover:text-white", title: "All boards" do %>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      <% end %>
+      <div class="min-w-0">
+        <h1 class="truncate font-display text-sm font-semibold text-white sm:text-base"><%= @board.name %></h1>
+        <p class="truncate text-[11px] text-ink-400">Live with anyone who opens this board</p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2 sm:gap-3">
+      <div class="flex items-center -space-x-2" data-board-target="presence" aria-label="People on this board"></div>
+      <span class="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-1 text-[11px] font-medium text-emerald-300">
+        <span class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+        Live
+      </span>
+      <span class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-ink-200">
+        <span class="flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-semibold text-white" style="background: hsl(<%= avatar_hue(current_nickname) %> 55% 42%)"><%= initials_for(current_nickname) %></span>
+        <span class="hidden sm:inline"><%= current_nickname %></span>
+      </span>
+    </div>
+  </header>
+
+  <%# Canvas stage %>
+  <div class="relative min-h-0 flex-1 overflow-hidden" data-board-target="stage">
+    <canvas data-board-target="canvas" class="absolute inset-0 h-full w-full touch-none cursor-crosshair"></canvas>
+    <div data-board-target="cursors" class="pointer-events-none absolute inset-0 overflow-hidden"></div>
+
+    <%# Floating tool dock %>
+    <aside class="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex justify-center px-3 sm:bottom-6">
+      <div class="pointer-events-auto flex max-w-full flex-wrap items-center justify-center gap-1 rounded-2xl border border-white/10 bg-ink-950/90 p-1.5 shadow-2xl shadow-black/40 backdrop-blur-xl sm:gap-1.5 sm:p-2">
+        <div class="flex items-center gap-0.5 rounded-xl bg-white/5 p-0.5" role="toolbar" aria-label="Tools">
+          <button type="button" data-tool="pen" data-board-target="tool" data-action="board#selectTool" class="tool-btn is-active" title="Pen (P)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg>
+          </button>
+          <button type="button" data-tool="eraser" data-board-target="tool" data-action="board#selectTool" class="tool-btn" title="Eraser (E)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg>
+          </button>
+          <button type="button" data-tool="line" data-board-target="tool" data-action="board#selectTool" class="tool-btn" title="Line (L)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 19 19 5"/></svg>
+          </button>
+          <button type="button" data-tool="rect" data-board-target="tool" data-action="board#selectTool" class="tool-btn" title="Rectangle (R)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="16" height="14" rx="1"/></svg>
+          </button>
+          <button type="button" data-tool="ellipse" data-board-target="tool" data-action="board#selectTool" class="tool-btn" title="Ellipse (O)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="12" rx="8" ry="6"/></svg>
+          </button>
+          <button type="button" data-tool="pan" data-board-target="tool" data-action="board#selectTool" class="tool-btn" title="Pan (H / Space)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-4 0"/><path d="M14 10V4a2 2 0 0 0-4 0v2"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>
+          </button>
+        </div>
+
+        <div class="mx-0.5 hidden h-8 w-px bg-white/10 sm:block"></div>
+
+        <div class="flex items-center gap-1 px-1" role="group" aria-label="Colors">
+          <% %w[#111827 #ef4444 #f59e0b #22c55e #06b6d4 #3b82f6 #a855f7 #f8fafc].each do |color| %>
+            <button
+              type="button"
+              data-color="<%= color %>"
+              data-board-target="color"
+              data-action="board#selectColor"
+              class="color-swatch <%= color == '#111827' ? 'is-active' : '' %>"
+              style="--swatch: <%= color %>"
+              title="<%= color %>"
+              aria-label="Color <%= color %>"
+            ></button>
+          <% end %>
+        </div>
+
+        <div class="mx-0.5 hidden h-8 w-px bg-white/10 sm:block"></div>
+
+        <div class="flex items-center gap-2 px-2">
+          <label class="sr-only" for="stroke-width">Stroke width</label>
+          <input
+            id="stroke-width"
+            type="range"
+            min="1"
+            max="32"
+            value="4"
+            data-board-target="width"
+            data-action="input->board#changeWidth"
+            class="width-slider w-20 sm:w-28"
+          >
+          <span class="w-6 text-center text-[11px] tabular-nums text-ink-400" data-board-target="widthLabel">4</span>
+        </div>
+
+        <div class="mx-0.5 hidden h-8 w-px bg-white/10 sm:block"></div>
+
+        <div class="flex items-center gap-0.5">
+          <button type="button" data-action="board#zoomOut" class="tool-btn" title="Zoom out">−</button>
+          <button type="button" data-action="board#resetView" class="tool-btn min-w-[3.25rem] text-[11px] font-medium tabular-nums" data-board-target="zoomLabel" title="Reset view">100%</button>
+          <button type="button" data-action="board#zoomIn" class="tool-btn" title="Zoom in">+</button>
+        </div>
+      </div>
+    </aside>
+
+    <p class="pointer-events-none absolute left-4 top-4 z-10 hidden rounded-lg border border-white/10 bg-ink-950/70 px-2.5 py-1.5 text-[11px] text-ink-400 backdrop-blur md:block">
+      Scroll to zoom · Space + drag to pan · Double-click resets
+    </p>
+  </div>
+</div>

@@ -1,0 +1,44 @@
+# PostgreSQL. Versions 9.5 and up are supported.
+#
+# Override with env vars:
+#   PGUSER, PGPASSWORD, PGHOST, PGPORT
+# Or a full URL:
+#   DATABASE_URL=postgres://user:pass@127.0.0.1:5432/task_6_development?sslmode=disable
+
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  host: <%= ENV.fetch("PGHOST", "127.0.0.1") %>
+  port: <%= ENV.fetch("PGPORT", 5432) %>
+  username: <%= ENV.fetch("PGUSER", "postgres") %>
+  password: <%= ENV.fetch("PGPASSWORD", "inkroom") %>
+  gssencmode: disable
+  sslmode: disable
+
+development:
+  <<: *default
+  database: task_6_development
+
+test:
+  <<: *default
+  database: task_6_test
+
+production:
+  primary: &primary_production
+    <<: *default
+    database: task_6_production
+    username: <%= ENV.fetch("PGUSER", "task_6") %>
+    password: <%= ENV["TASK_6_DATABASE_PASSWORD"] || ENV.fetch("PGPASSWORD", "inkroom") %>
+  cache:
+    <<: *primary_production
+    database: task_6_production_cache
+    migrations_paths: db/cache_migrate
+  queue:
+    <<: *primary_production
+    database: task_6_production_queue
+    migrations_paths: db/queue_migrate
+  cable:
+    <<: *primary_production
+    database: task_6_production_cable
+    migrations_paths: db/cable_migrate

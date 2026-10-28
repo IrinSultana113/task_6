@@ -1,0 +1,83 @@
+<% content_for :title, "Boards" %>
+<% content_for :body_class, "min-h-screen bg-ink-950 text-ink-50 antialiased" %>
+
+<div class="relative min-h-screen">
+  <div class="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+    <div class="absolute top-0 left-1/2 h-72 w-[40rem] -translate-x-1/2 rounded-full bg-teal-500/10 blur-[90px]"></div>
+    <div class="absolute inset-0 opacity-[0.05]" style="background-image: radial-gradient(circle at 1px 1px, #94a3b8 1px, transparent 0); background-size: 24px 24px;"></div>
+  </div>
+
+  <header class="relative z-10 border-b border-white/5 bg-ink-950/70 backdrop-blur-xl">
+    <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
+      <div class="flex items-center gap-3">
+        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-teal-400 to-cyan-600">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg>
+        </span>
+        <span class="font-display text-lg text-white">Inkroom</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="hidden sm:inline text-sm text-ink-400">Drawing as</span>
+        <span class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm">
+          <span class="flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold text-white" style="background: hsl(<%= avatar_hue(current_nickname) %> 55% 42%)"><%= initials_for(current_nickname) %></span>
+          <%= current_nickname %>
+        </span>
+        <%= button_to "Leave", session_path, method: :delete, class: "text-sm text-ink-400 hover:text-white transition", form: { data: { turbo: false } } %>
+      </div>
+    </div>
+  </header>
+
+  <main class="relative z-10 mx-auto max-w-6xl px-5 py-10 sm:px-8">
+    <div class="mb-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+      <div class="animate-rise">
+        <h1 class="font-serif text-3xl sm:text-4xl text-white mb-2">Boards</h1>
+        <p class="text-ink-300 max-w-md">Create a fresh canvas or jump into one that’s already buzzing.</p>
+      </div>
+
+      <div class="w-full max-w-md animate-rise-delay">
+        <% if flash[:alert] %>
+          <div class="mb-3 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200"><%= flash[:alert] %></div>
+        <% end %>
+        <%= form_with model: @board, class: "flex gap-2", data: { turbo: false } do |f| %>
+          <%= f.text_field :name,
+                required: true,
+                maxlength: 80,
+                placeholder: "Name your board…",
+                class: "flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-ink-500 outline-none focus:border-teal-400/50 focus:ring-4 focus:ring-teal-400/10" %>
+          <%= f.submit "Create", class: "cursor-pointer rounded-xl bg-teal-400 px-5 py-3 text-sm font-semibold text-ink-950 hover:bg-teal-300 transition" %>
+        <% end %>
+      </div>
+    </div>
+
+    <% if @boards.any? %>
+      <ul class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <% @boards.each_with_index do |board, i| %>
+          <li class="animate-rise" style="animation-delay: <%= [i * 40, 400].min %>ms">
+            <%= link_to board_path(board), class: "group block rounded-2xl border border-white/8 bg-white/[0.03] p-5 transition hover:border-teal-400/30 hover:bg-white/[0.06]" do %>
+              <div class="mb-4 flex h-28 items-end overflow-hidden rounded-xl bg-gradient-to-br from-ink-900 to-ink-800 relative">
+                <div class="absolute inset-0 opacity-40" style="background-image: linear-gradient(#2dd4bf22 1px, transparent 1px), linear-gradient(90deg, #2dd4bf22 1px, transparent 1px); background-size: 16px 16px;"></div>
+                <svg class="relative m-4 h-10 w-full text-teal-400/50" viewBox="0 0 200 40" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                  <path d="M10 28 C 40 8, 60 32, 90 18 S 140 6, 190 22" class="group-hover:opacity-100 opacity-70 transition"/>
+                </svg>
+              </div>
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <h2 class="font-display text-base font-medium text-white group-hover:text-teal-200 transition"><%= board.name %></h2>
+                  <p class="mt-1 text-xs text-ink-400">by <%= board.creator_nickname %> · <%= pluralize(board.strokes_count, "stroke") %></p>
+                </div>
+                <span class="mt-0.5 text-ink-500 transition group-hover:text-teal-300 group-hover:translate-x-0.5">→</span>
+              </div>
+              <p class="mt-3 text-[11px] uppercase tracking-wider text-ink-500">
+                <%= time_ago_in_words(board.last_activity_at || board.created_at) %> ago
+              </p>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <div class="rounded-3xl border border-dashed border-white/10 bg-white/[0.02] px-8 py-16 text-center animate-rise">
+        <p class="font-serif text-2xl text-white mb-2">No boards yet</p>
+        <p class="text-ink-400 text-sm">Create the first one above and start sketching.</p>
+      </div>
+    <% end %>
+  </main>
+</div>

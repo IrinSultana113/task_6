@@ -12,7 +12,7 @@ default: &default
   host: <%= ENV.fetch("PGHOST", "127.0.0.1") %>
   port: <%= ENV.fetch("PGPORT", 5432) %>
   username: <%= ENV.fetch("PGUSER", "postgres") %>
-  password: <%= ENV.fetch("PGPASSWORD", "***REMOVED***") %>
+  password: <%= ENV["PGPASSWORD"] %>
   gssencmode: disable
   sslmode: disable
 
